@@ -2,8 +2,6 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 
 @Schema({ timestamps: true }) //to make add the creatAt field
 export class User {
-    @Prop({ required: true, unique: true, lowercase: true, trim: true })
-    handler: string
 
     @Prop({ required: true, trim: true })
     displayName: string;

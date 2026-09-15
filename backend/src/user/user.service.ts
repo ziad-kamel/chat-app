@@ -4,16 +4,17 @@ import { UpdateUserDto } from './dto/update-user.dto.js';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from '../schemas/user.schema.js';
 import mongoose, { Model } from 'mongoose';
+import { HashService } from '../common/security/hash.service.js';
 
 @Injectable()
 export class UserService {
-  constructor (@InjectModel(User.name) private readonly userModel: Model<User>){}
+  constructor (@InjectModel(User.name) private readonly userModel: Model<User>, private  readonly hashService: HashService){}
   create(createUserDto: CreateUserDto) {
     //creating doucument object from the User collection
     //save the user and return the user document back to the controller 
-    const newUser = new this.userModel(createUserDto);
-    newUser.handler = `@${createUserDto.handler}`
     //TODO: add the password hashing logic before saving to db desk
+    const hashedPassword = this.hashService.hash(createUserDto.password)
+    const newUser = new this.userModel({...createUserDto , password:hashedPassword});
     return newUser.save();
   }
 
