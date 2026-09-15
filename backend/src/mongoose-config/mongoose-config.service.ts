@@ -6,6 +6,9 @@ export class MongooseConfigService implements MongooseOptionsFactory{
     createMongooseOptions(): MongooseModuleOptions {
         return {
             uri: process.env.MONGODB_URI,
+            dbName: process.env.DB_NAME,
+            retryWrites:true,
+            w:"majority"
         }
     }
 }
