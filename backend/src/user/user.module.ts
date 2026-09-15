@@ -12,5 +12,6 @@ import { SecurityModule } from '../common/security/security.module.js';
   ],
   controllers: [UserController],
   providers: [UserService],
+  exports:[UserService]
 })
 export class UserModule {}

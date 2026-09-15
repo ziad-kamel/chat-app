@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MongooseConfigService } from './mongoose-config/mongoose-config.service.js';
 import { UserModule } from './user/user.module.js';
+import { AuthModule } from './auth/auth.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -18,7 +19,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         uri: config.getOrThrow<string>('MONGODB_URI'),
         dbName:config.getOrThrow<string>('DB_NAME')
       }),
-    }), UserModule
+    }),
+    UserModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService, MongooseConfigService],
