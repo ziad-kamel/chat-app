@@ -3,6 +3,7 @@ import { Model } from "mongoose";
 import { CreateUserDto } from "../dto/create-user.dto.js";
 import { UpdateUserDto } from "../dto/update-user.dto.js";
 import { User } from "../../schemas/user.schema.js";
+import { NotFoundException } from "@nestjs/common";
 
 //define the main db operations CRUD
 export class UserRepository {
@@ -28,7 +29,8 @@ export class UserRepository {
 
     //Update
     async updateUser(id: string, updateUserDto: UpdateUserDto) {
-        return await this.userModel.findByIdAndUpdate(id, updateUserDto, { returnDocument: "after" })
+        return  await this.userModel.findByIdAndUpdate(id, updateUserDto, { returnDocument: "after" })
+        
     }
 
     //Delete
