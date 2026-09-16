@@ -23,6 +23,10 @@ export class UserService {
     return this.userRepository.findUserById(id)
   }
 
+  findOneByEmail(email:string){
+    return this.userRepository.findUserByEmail(email)
+  }
+
   update(id: string, updateUserDto: UpdateUserDto) {
     this.checkInvalidId(id)
     return this.userRepository.updateUser(id, updateUserDto)

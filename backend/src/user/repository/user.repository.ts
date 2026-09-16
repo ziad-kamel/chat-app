@@ -1,9 +1,9 @@
 import { InjectModel } from "@nestjs/mongoose";
-import { User } from "../entities/user.entity.js";
 import { Model } from "mongoose";
 import { CreateUserDto } from "../dto/create-user.dto.js";
 import { NotFoundException } from "@nestjs/common";
 import { UpdateUserDto } from "../dto/update-user.dto.js";
+import { User } from "../../schemas/user.schema.js";
 
 //define the main db operations CRUD
 export class UserRepository {
@@ -25,6 +25,9 @@ export class UserRepository {
             throw new NotFoundException()
         }
         return user
+    }
+    async findUserByEmail(email:string){
+        return await this.userModel.findOne({email:email}).select("+password")
     }
 
     //Update

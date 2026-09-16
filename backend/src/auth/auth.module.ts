@@ -4,10 +4,12 @@ import { AuthController } from './auth.controller.js';
 import { UserModule } from '../user/user.module.js';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { SecurityModule } from '../common/security/security.module.js';
 
 @Module({
   imports: [
     UserModule,
+    SecurityModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
