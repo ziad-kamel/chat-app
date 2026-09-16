@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { PassportModule } from '@nestjs/passport';
+import { ConversationModule } from './conversation/conversation.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -25,7 +26,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     UserModule,
-    AuthModule
+    AuthModule,
+    ConversationModule
   ],
   controllers: [AppController],
   providers: [AppService, MongooseConfigService, {provide: APP_GUARD, useClass: JwtAuthGuard,},],
