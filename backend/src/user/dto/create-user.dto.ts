@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Length, Max, Min } from "class-validator";
 
 export class CreateUserDto {
     //mandatory fields 
@@ -10,6 +10,7 @@ export class CreateUserDto {
     email: string;
     @IsString({message:"Password is required"})
     @IsNotEmpty()
+    @Length(8,20)
     password: string;
     //optional fields
     @IsString()
