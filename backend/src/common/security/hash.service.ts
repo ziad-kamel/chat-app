@@ -12,12 +12,13 @@ export class HashService{
     }
 
     //create method for hashing
-    hash(plainText:string){
-        return bcrypt.hashSync(plainText, this.SALT_ROUND)
+    async hash(plainText:string):Promise<string>{
+        const hashed = await bcrypt.hashSync(plainText, this.SALT_ROUND)
+        return hashed
     }
 
     //create method for comparing
-    compare(plainText:string, hashedText:string){
-        return bcrypt.compareSync(plainText, hashedText)
+    async compare(plainText:string, hashedText:string):Promise<boolean>{
+        return await bcrypt.compareSync(plainText, hashedText)
     }
 }

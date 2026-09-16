@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../user/user.service.js';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto.js';
@@ -28,23 +28,11 @@ export class AuthService {
     return await this.createToken(user._id.toString())
   }
 
-  async isAuthed(authHeader: string) {
-    //check if there is a header sent
-    if (!authHeader) {
-      throw new UnauthorizedException('No authorization header found');
-    }
-    //get the token from the header
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      throw new UnauthorizedException('Invalid token format. Expected: Bearer <token>');
-    }
-    const token = parts[1];
-    //check for token validation
-    const isValid = await this.jwtService.verifyAsync(token).then((response) => { return response }).catch(() => { throw new UnauthorizedException() })
-    return isValid
-  }
-
   async signup(createUserDto: CreateUserDto) {
+    //first make sure there is no user with the same email
+    const existingUser = await this.userService.findOneByEmail(createUserDto.email)
+    if(existingUser){throw new ConflictException("Email provided is already in use")}
+    
     //create and save user
     //return the token in order to store it to client-side
     const newUser = await this.userService.create(createUserDto)
@@ -57,7 +45,7 @@ export class AuthService {
 
 
   private async createToken(userId: string) {
-    const payload = { id: userId };
+    const payload = { sub: userId };
     return { accessToken: await this.jwtService.signAsync(payload) }
 
   }

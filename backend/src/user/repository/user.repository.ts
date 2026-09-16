@@ -1,7 +1,6 @@
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateUserDto } from "../dto/create-user.dto.js";
-import { NotFoundException } from "@nestjs/common";
 import { UpdateUserDto } from "../dto/update-user.dto.js";
 import { User } from "../../schemas/user.schema.js";
 
@@ -20,14 +19,11 @@ export class UserRepository {
         return await this.userModel.find();
     }
     async findUserById(id: string) {
-        const user = await this.userModel.findById(id);
-        if (!user) {
-            throw new NotFoundException()
-        }
-        return user
+        return await this.userModel.findById(id);
+
     }
-    async findUserByEmail(email:string){
-        return await this.userModel.findOne({email:email}).select("+password")
+    async findUserByEmail(email: string) {
+        return await this.userModel.findOne({ email: email }).select("+password")
     }
 
     //Update
