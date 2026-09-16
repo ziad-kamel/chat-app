@@ -3,6 +3,7 @@ import { UserService } from './user.service.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { BlockEmptyBodyPipe } from '../common/pipes/block-empty-body.pipe.js';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 
 @Controller('user')
 export class UserController {
@@ -13,11 +14,17 @@ export class UserController {
     return this.userService.findAll();
   }
 
+  @Get('profile')
+  getMe(@CurrentUser('userId') userId: string) {
+    // 'user' is automatically injected from the validated JWT payload!
+    return this.userService.findOneById(userId)
+  }
 
   @Get(':id')
   findOneById(@Param('id', ParseObjectIdPipe) id: string) {
     return this.userService.findOneById(id);
   }
+
 
   @Patch(':id')
   update(@Param('id', ParseObjectIdPipe) id: string, @Body(new BlockEmptyBodyPipe) updateUserDto: UpdateUserDto) {
