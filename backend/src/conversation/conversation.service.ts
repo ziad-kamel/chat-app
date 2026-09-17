@@ -1,26 +1,34 @@
-import { Injectable } from '@nestjs/common';
-import { CreateConversationDto } from './dto/create-conversation.dto.js';
-import { UpdateConversationDto } from './dto/update-conversation.dto.js';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConversationRepository } from './repository/conversation.repository.js';
+import { UserService } from '../user/user.service.js';
 
 @Injectable()
 export class ConversationService {
-  create(createConversationDto: CreateConversationDto) {
-    return 'This action adds a new conversation';
+  constructor(private readonly conversationRepository: ConversationRepository, private readonly userService: UserService) { }
+
+  async createConversation(currentUserId: string, recipientId: string) {
+
+    if (currentUserId === recipientId) {
+      throw new BadRequestException('You cannot start a conversation with yourself');
+    }
+
+    await this.userService.findOneById(recipientId);
+
+
+    const existing = await this.findByParticipants(currentUserId, recipientId)
+    if (existing) {
+      return existing
+    }
+    const newConversation = await this.conversationRepository.create([currentUserId, recipientId]);
+    return newConversation
   }
 
-  findAll() {
-    return `This action returns all conversation`;
+  async findByParticipants(userId1: string, userId2: string) {
+    if (userId1.toString() === userId2.toString()) { throw new BadRequestException("Can't search for yourself") }
+    return this.conversationRepository.findByParticipants(userId1, userId2);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} conversation`;
-  }
-
-  update(id: number, updateConversationDto: UpdateConversationDto) {
-    return `This action updates a #${id} conversation`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} conversation`;
+  async findAllUserConversations(userId: string) {
+    return await this.conversationRepository.findByUserId(userId);
   }
 }
