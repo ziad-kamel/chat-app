@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+:root { --background: #f6f7fb; --foreground: #172033; }
 
 @theme inline {
   --color-background: var(--background);
@@ -12,15 +9,17 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+button { cursor: pointer; }
+.input-wrap { display: flex; align-items: center; gap: 0.7rem; border: 1px solid #e7eaf1; border-radius: 0.9rem; background: #fff; padding: 0.75rem 0.9rem; color: #94a3b8; }
+.input-wrap input { min-width: 0; flex: 1; background: transparent; outline: none; font-size: 0.875rem; color: #172033; }
+.button-primary { display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.9rem; background: #4f46e5; padding: 0.85rem 1rem; font-size: 0.875rem; font-weight: 600; color: white; transition: background .2s; }
+.button-primary:hover { background: #4338ca; }
+.button-primary:disabled { cursor: not-allowed; opacity: .6; }
+.icon-button { display: inline-flex; align-items: center; justify-content: center; color: #94a3b8; transition: color .2s; }
+.icon-button:hover { color: #4f46e5; }
