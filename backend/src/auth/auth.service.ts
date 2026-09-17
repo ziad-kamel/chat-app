@@ -4,13 +4,16 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto.js';
 import { HashService } from '../common/security/hash.service.js';
 import { CreateUserDto } from '../user/dto/create-user.dto.js';
+import { TokenBlacklistService } from './services/token-blacklist.service.js';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    private readonly hashService: HashService
+    private readonly hashService: HashService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
   ) { }
 
   async login(loginDto: LoginDto) {
@@ -42,11 +45,27 @@ export class AuthService {
     }
   }
 
+  async logout(authorization?: string) {
+    const token = authorization?.replace(/^Bearer\s+/i, '');
+    if (!token) {
+      throw new UnauthorizedException('Authorization token is required');
+    }
+
+    const payload = await this.jwtService.verifyAsync<{ jti?: string; exp?: number }>(token);
+    if (!payload.jti || !payload.exp) {
+      throw new UnauthorizedException('Invalid authorization token');
+    }
+
+    this.tokenBlacklistService.revoke(payload.jti, payload.exp);
+    return { message: 'Logged out successfully' };
+  }
+
 
 
   private async createToken(userId: string) {
     const payload = { sub: userId };
-    return { accessToken: await this.jwtService.signAsync(payload) }
+    const jti = randomUUID();
+    return { accessToken: await this.jwtService.signAsync(payload, { jwtid: jti }) }
 
   }
 }

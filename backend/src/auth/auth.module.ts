@@ -8,6 +8,7 @@ import { SecurityModule } from '../common/security/security.module.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
+import { TokenBlacklistService } from './services/token-blacklist.service.js';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
     })
   ],
   controllers: [AuthController],
-  providers: [AuthService,JwtAuthGuard,JwtStrategy],
-  exports:[JwtAuthGuard, JwtModule]
+  providers: [AuthService,JwtAuthGuard,JwtStrategy, TokenBlacklistService],
+  exports:[JwtAuthGuard, JwtModule, TokenBlacklistService]
 })
 export class AuthModule { }

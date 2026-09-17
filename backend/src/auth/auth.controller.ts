@@ -19,6 +19,9 @@ export class AuthController {
     return this.authService.signup(createUserDto)
   }
 
-
+  @Post("logout")
+  logout(@Headers('authorization') authorization?: string){
+    return this.authService.logout(authorization)
+  }
 
 }

@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { MessageService } from './message.service.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';
 import { ConversationService } from '../conversation/conversation.service.js';
+import { TokenBlacklistService } from '../auth/services/token-blacklist.service.js';
 
 @WebSocketGateway({ cors: true })
 export class MessageGateway {
@@ -22,6 +23,7 @@ export class MessageGateway {
     private readonly configService: ConfigService,
     private readonly messageService: MessageService,
     private readonly conversationService: ConversationService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
   ) { }
 
   async handleConnection(socket: Socket) {
@@ -33,10 +35,14 @@ export class MessageGateway {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub: string }>(
+      const payload = await this.jwtService.verifyAsync<{ sub: string; jti: string }>(
         token,
         { secret: this.configService.getOrThrow<string>('JWT_SECRET') },
       );
+      if (this.tokenBlacklistService.isRevoked(payload.jti)) {
+        socket.disconnect();
+        return;
+      }
       socket.data.userId = payload.sub;
       socket.join(`user:${payload.sub}`);
       this.server.emit('user:online', { userId: payload.sub });
