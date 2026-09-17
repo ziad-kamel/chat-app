@@ -19,6 +19,7 @@ export type Conversation = {
     readAt?: string | null;
   } | null;
   updatedAt?: string;
+  unreadCount?: number;
 };
 
 export type Message = {

@@ -19,7 +19,7 @@ import { TokenBlacklistService } from './services/token-blacklist.service.js';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '5m' }
+        signOptions: { expiresIn: '1d' }
       })
     })
   ],

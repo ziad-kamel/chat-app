@@ -4,12 +4,9 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MessageCircle,
-  MoreHorizontal,
-  Paperclip,
   Search,
   Send,
   Settings,
-  Smile,
   UserPlus,
   X,
   LogOut,
@@ -38,12 +35,29 @@ function time(value?: string) {
   }).format(new Date(value));
 }
 
+function uniqueConversations(list: Conversation[], userId: string) {
+  const seen = new Set<string>();
+  return list.filter((conversation) => {
+    const otherUser = participant(conversation, userId);
+    if (!otherUser || seen.has(otherUser._id)) return false;
+    seen.add(otherUser._id);
+    return true;
+  });
+}
+
+function senderId(message: Message) {
+  return typeof message.senderId === "string" ? message.senderId : message.senderId._id;
+}
+
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [messagePage, setMessagePage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [search, setSearch] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [users, setUsers] = useState<User[]>([]);
@@ -53,6 +67,8 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const preserveScrollRef = useRef(false);
   const socketRef = useRef<ReturnType<typeof getSocket>>(null);
 
   const visibleUsers = useMemo(() => {
@@ -78,9 +94,10 @@ export default function Home() {
         const list = await apiRequest<Conversation[]>("/conversation");
         const allUsers = await apiRequest<User[]>("/user");
         setUser(current);
-        setConversations(list);
+        const uniqueList = uniqueConversations(list, current._id);
+        setConversations(uniqueList);
         setUsers(allUsers);
-        if (list[0]) setActive(list[0]);
+        if (uniqueList[0]) setActive(uniqueList[0]);
         socketRef.current = getSocket();
       } catch {
         localStorage.removeItem("accessToken");
@@ -95,20 +112,39 @@ export default function Home() {
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
-    const onMessage = (message: Message) => {
+    const onMessage = async (message: Message) => {
+      const isActive = message.conversationId === active?._id;
+      const isOwnMessage = senderId(message) === user?._id;
       setMessages((current) =>
-        message.conversationId === active?._id &&
+        isActive &&
         !current.some((item) => item._id === message._id)
           ? [...current, message]
           : current,
       );
-      setConversations((current) =>
-        current.map((item) =>
-          item._id === message.conversationId
-            ? { ...item, lastMessageId: message }
-            : item,
-        ),
-      );
+      const existing = conversations.find((item) => item._id === message.conversationId);
+      if (existing) {
+        setConversations((current) => [
+          {
+            ...existing,
+            lastMessageId: message,
+            unreadCount: isActive || isOwnMessage ? 0 : (existing.unreadCount ?? 0) + 1,
+          },
+          ...current.filter((item) => item._id !== message.conversationId),
+        ]);
+        return;
+      }
+
+      const list = await apiRequest<Conversation[]>("/conversation").catch(() => []);
+      const conversation = list.find((item) => item._id === message.conversationId);
+      if (!conversation) return;
+      setConversations((current) => [
+        {
+          ...conversation,
+          lastMessageId: message,
+          unreadCount: isActive || isOwnMessage ? 0 : conversation.unreadCount ?? 0,
+        },
+        ...current.filter((item) => item._id !== conversation._id),
+      ]);
     };
     const onTyping = (event: {
       conversationId: string;
@@ -118,6 +154,29 @@ export default function Home() {
       if (event.conversationId === active?._id && event.userId !== user?._id)
         setTyping(event.isTyping);
     };
+    const onRead = (event: { conversationId: string; userId: string }) => {
+      if (event.conversationId !== active?._id || event.userId === user?._id) return;
+      setMessages((current) =>
+        current.map((message) =>
+          senderId(message) === user?._id && !message.readAt
+            ? { ...message, readAt: new Date().toISOString() }
+            : message,
+        ),
+      );
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation._id === event.conversationId && conversation.lastMessageId
+            ? {
+                ...conversation,
+                lastMessageId: {
+                  ...conversation.lastMessageId,
+                  readAt: new Date().toISOString(),
+                },
+              }
+            : conversation,
+        ),
+      );
+    };
     const online = ({ userId }: { userId: string }) =>
       setOnlineIds((current) => [...new Set([...current, userId])]);
     const offline = ({ userId }: { userId: string }) =>
@@ -125,30 +184,79 @@ export default function Home() {
     socket
       .on("message:new", onMessage)
       .on("conversation:typing", onTyping)
+      .on("conversation:read", onRead)
       .on("user:online", online)
       .on("user:offline", offline);
     return () => {
       socket
         .off("message:new", onMessage)
         .off("conversation:typing", onTyping)
+        .off("conversation:read", onRead)
         .off("user:online", online)
         .off("user:offline", offline);
     };
-  }, [active?._id, user?._id]);
+  }, [active?._id, conversations, user?._id]);
 
   useEffect(() => {
     if (!active || !user) return;
-    apiRequest<{ messages: Message[] }>(
+    setMessagePage(1);
+    setHasNextPage(false);
+    apiRequest<{ messages: Message[]; hasNextPage: boolean }>(
       `/conversation/${active._id}/messages?page=1&limit=50`,
     )
-      .then((data) => setMessages(data.messages))
+      .then((data) => {
+        setMessages(data.messages);
+        setHasNextPage(data.hasNextPage);
+      })
       .catch(() => setMessages([]));
     socketRef.current?.emit("conversation:read", {
       conversationId: active._id,
     });
+    setConversations((current) =>
+      current.map((conversation) =>
+        conversation._id === active._id
+          ? { ...conversation, unreadCount: 0 }
+          : conversation,
+      ),
+    );
   }, [active, user]);
 
+  async function loadMoreMessages() {
+    if (!active || loadingMessages || !hasNextPage) return;
+    const container = messagesRef.current;
+    const previousHeight = container?.scrollHeight ?? 0;
+    const previousTop = container?.scrollTop ?? 0;
+    preserveScrollRef.current = true;
+    setLoadingMessages(true);
+    try {
+      const nextPage = messagePage + 1;
+      const data = await apiRequest<{
+        messages: Message[];
+        hasNextPage: boolean;
+      }>(`/conversation/${active._id}/messages?page=${nextPage}&limit=50`);
+      setMessages((current) => [
+        ...data.messages.filter(
+          (message) => !current.some((item) => item._id === message._id),
+        ),
+        ...current,
+      ]);
+      setMessagePage(nextPage);
+      setHasNextPage(data.hasNextPage);
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight - previousHeight + previousTop;
+        }
+      });
+    } finally {
+      setLoadingMessages(false);
+    }
+  }
+
   useEffect(() => {
+    if (preserveScrollRef.current) {
+      preserveScrollRef.current = false;
+      return;
+    }
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
@@ -157,12 +265,26 @@ export default function Home() {
       method: "POST",
       body: JSON.stringify({ recipientId }),
     });
-    setConversations((current) =>
-      current.some((item) => item._id === conversation._id)
-        ? current
-        : [conversation, ...current],
-    );
-    setActive(conversation);
+    const recipient = users.find((item) => item._id === recipientId);
+    const conversationWithParticipants = {
+      ...conversation,
+      participantsIds: conversation.participantsIds?.some(
+        (item) => typeof item !== "string",
+      )
+        ? conversation.participantsIds
+        : [user, recipient].filter((item): item is User => Boolean(item)),
+    };
+    setConversations((current) => {
+      const existing = current.find((item) => item._id === conversation._id);
+      return existing
+        ? current.map((item) =>
+            item._id === conversation._id
+              ? { ...item, ...conversationWithParticipants }
+              : item,
+          )
+        : [conversationWithParticipants, ...current];
+    });
+    setActive(conversationWithParticipants);
     setSearch("");
   }
 
@@ -309,8 +431,15 @@ export default function Home() {
                       {conversation.lastMessageId?.content ?? "Start chatting"}
                     </span>
                   </span>
-                  <span className="text-[10px] text-slate-400">
-                    {time(conversation.lastMessageId?.createdAt)}
+                  <span className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] text-slate-400">
+                      {time(conversation.lastMessageId?.createdAt)}
+                    </span>
+                    {Boolean(conversation.unreadCount) && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-semibold text-white">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
                   </span>
                 </button>
               );
@@ -359,12 +488,32 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                <button className="icon-button">
-                  <MoreHorizontal />
+                <button
+                  className="icon-button rounded-xl p-2 hover:bg-slate-100"
+                  onClick={() => setActive(null)}
+                  aria-label="Close conversation"
+                  title="Close conversation"
+                >
+                  <X size={19} />
                 </button>
               </header>
-              <div className="flex-1 overflow-y-auto bg-[#fcfdff] px-8 py-6">
+              <div
+                ref={messagesRef}
+                onScroll={(event) => {
+                  if (event.currentTarget.scrollTop < 80) void loadMoreMessages();
+                }}
+                className="flex-1 overflow-y-auto bg-[#fcfdff] px-8 py-6"
+              >
                 <div className="mx-auto flex max-w-3xl flex-col gap-3">
+                  {hasNextPage && (
+                    <button
+                      onClick={() => void loadMoreMessages()}
+                      disabled={loadingMessages}
+                      className="mx-auto rounded-xl bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-600 disabled:opacity-50"
+                    >
+                      {loadingMessages ? "Loading older messages..." : "Load older messages"}
+                    </button>
+                  )}
                   {messages.map((message) => {
                     const mine =
                       (typeof message.senderId === "string"
@@ -405,18 +554,12 @@ export default function Home() {
                 onSubmit={sendMessage}
                 className="flex items-center gap-3 border-t border-slate-100 bg-white p-5"
               >
-                <button type="button" className="icon-button">
-                  <Paperclip size={19} />
-                </button>
                 <input
                   value={newMessage}
                   onChange={(e) => handleTyping(e.target.value)}
                   placeholder="Write a message..."
                   className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
                 />
-                <button type="button" className="icon-button">
-                  <Smile size={19} />
-                </button>
                 <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white transition hover:bg-indigo-700">
                   <Send size={18} />
                 </button>
