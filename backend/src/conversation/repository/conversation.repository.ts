@@ -31,6 +31,10 @@ export class ConversationRepository {
                 path: 'participantsIds',
                 select: 'displayName',
             })
+            .populate({
+                path: 'lastMessageId',
+                select: 'content senderId createdAt readAt',
+            })
     }
 
     async updateLastMessage(conversationId: string, messageId: string) {
