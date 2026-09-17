@@ -11,25 +11,27 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { PassportModule } from '@nestjs/passport';
 import { ConversationModule } from './conversation/conversation.module.js';
+import { MessageModule } from './message/message.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), // to configure the .env vars across the app
+    ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         uri: config.getOrThrow<string>('MONGODB_URI'),
-        dbName:config.getOrThrow<string>('DB_NAME')
+        dbName: config.getOrThrow<string>('DB_NAME')
       }),
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     UserModule,
     AuthModule,
-    ConversationModule
+    ConversationModule,
+    MessageModule
   ],
   controllers: [AppController],
-  providers: [AppService, MongooseConfigService, {provide: APP_GUARD, useClass: JwtAuthGuard,},],
+  providers: [AppService, MongooseConfigService, { provide: APP_GUARD, useClass: JwtAuthGuard, }],
 })
 export class AppModule { }

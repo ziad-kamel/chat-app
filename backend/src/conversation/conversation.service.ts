@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConversationRepository } from './repository/conversation.repository.js';
 import { UserService } from '../user/user.service.js';
 
@@ -14,7 +14,6 @@ export class ConversationService {
 
     await this.userService.findOneById(recipientId);
 
-
     const existing = await this.findByParticipants(currentUserId, recipientId)
     if (existing) {
       return existing
@@ -26,6 +25,22 @@ export class ConversationService {
   async findByParticipants(userId1: string, userId2: string) {
     if (userId1.toString() === userId2.toString()) { throw new BadRequestException("Can't search for yourself") }
     return this.conversationRepository.findByParticipants(userId1, userId2);
+  }
+
+  async findOneById(id: string) {
+    const conversation = await this.conversationRepository.findOneById(id);
+    if (!conversation) {
+      throw new NotFoundException();
+    }
+    return conversation;
+  }
+
+  async markLastMessage(conversationId: string, messageId: string) {
+    const conversation = await this.conversationRepository.findOneById(conversationId);
+    if (!conversation) {
+      throw new NotFoundException();
+    }
+    return this.conversationRepository.updateLastMessage(conversationId, messageId);
   }
 
   async findAllUserConversations(userId: string) {
