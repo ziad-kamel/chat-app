@@ -1,114 +1,331 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Ripple Chat Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS backend for Ripple, a real-time one-to-one chat application. The backend provides JWT-authenticated REST APIs, MongoDB persistence through Mongoose, and an authenticated Socket.IO gateway for real-time chat events.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- Node.js
+- NestJS
+- TypeScript
+- MongoDB
+- Mongoose
+- JWT and Passport
+- Socket.IO
+- class-validator
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Requirements
 
-## Project setup
+- Node.js 20 or newer
+- npm
+- MongoDB Atlas or a local MongoDB server
+
+## Installation
 
 ```bash
-$ npm install
+cd backend
+npm install
 ```
 
-## Compile and run the project
+Create a local environment file:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+copy .env.example .env
 ```
 
-## Run tests
+Linux/macOS:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+Configure the values before starting the server.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Environment variables
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+```env
+DB_NAME=chatApp
+MONGODB_URI=mongodb://127.0.0.1:27017
+JWT_SECRET=replace-with-a-long-random-secret
+SALT=replace-with-your-password-salt
+PORT=3000
+```
+
+Do not commit `.env` or real credentials. The backend reads the MongoDB database name and connection URI through `ConfigService`.
+
+## Running the backend
+
+Development with file watching:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Development without watch mode:
 
-## Observability
+```bash
+npm run start
+```
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+Production:
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+```bash
+npm run build
+npm run start:prod
+```
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+The backend listens on:
 
-## Resources
+```text
+http://localhost:3000
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+All REST routes use the `/api` prefix:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```text
+http://localhost:3000/api
+```
 
-## Support
+Socket.IO uses the same server and port:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```text
+http://localhost:3000
+```
 
-## Stay in touch
+## Application workflow
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Authentication flow
 
-## License
+1. A user signs up with a display name, email, and password.
+2. The password is hashed before it is stored.
+3. The backend returns a JWT access token.
+4. The frontend sends the token as `Authorization: Bearer <token>` for REST requests.
+5. The frontend sends the token in the Socket.IO handshake auth object.
+6. The JWT strategy validates protected REST requests.
+7. The WebSocket gateway validates the Socket.IO token before accepting the connection.
+8. Logout revokes the token until its expiration time.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Conversation flow
+
+1. An authenticated user creates a conversation with another user.
+2. The backend rejects self-conversations.
+3. The backend verifies that the recipient exists.
+4. Existing one-to-one conversations are returned instead of creating another one.
+5. Conversation access is checked before reading or sending messages.
+
+### Message flow
+
+1. The client emits `message:send` through Socket.IO.
+2. The gateway identifies the sender from the authenticated socket.
+3. The service validates conversation membership.
+4. The message is saved in MongoDB.
+5. The conversation's `lastMessageId` is updated.
+6. `message:new` is emitted to both participants.
+7. The recipient can emit `conversation:read`.
+8. Incoming messages are marked with `readAt`.
+9. The sender receives `conversation:read` and can display a seen state.
+
+## REST API
+
+All routes require a bearer token unless stated otherwise.
+
+### Authentication
+
+```http
+POST /api/auth/signup
+POST /api/auth/login
+POST /api/auth/logout
+```
+
+Signup body:
+
+```json
+{
+  "displayName": "Ahmed",
+  "email": "ahmed@example.com",
+  "password": "Password123"
+}
+```
+
+Login body:
+
+```json
+{
+  "email": "ahmed@example.com",
+  "password": "Password123"
+}
+```
+
+Logout requires:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+### Users
+
+```http
+GET /api/user
+GET /api/user/profile
+GET /api/user/:id
+PATCH /api/user/:id
+DELETE /api/user/:id
+```
+
+### Conversations
+
+```http
+GET /api/conversation
+POST /api/conversation
+GET /api/conversation/:recipientId
+```
+
+Create conversation body:
+
+```json
+{
+  "recipientId": "MONGODB_USER_ID"
+}
+```
+
+### Messages
+
+```http
+GET /api/conversation/:conversationId/messages?page=1&limit=50
+POST /api/conversation/:conversationId/messages/read
+```
+
+Message creation is intentionally handled through Socket.IO.
+
+Message history returns:
+
+```json
+{
+  "messages": [],
+  "page": 1,
+  "limit": 50,
+  "total": 0,
+  "hasNextPage": false
+}
+```
+
+## Socket.IO API
+
+Connect with:
+
+```ts
+const socket = io("http://localhost:3000", {
+  auth: {
+    token: accessToken,
+  },
+});
+```
+
+### Client events
+
+Send a message:
+
+```ts
+socket.emit("message:send", {
+  conversationId: "CONVERSATION_ID",
+  content: "Hello",
+});
+```
+
+Typing:
+
+```ts
+socket.emit("conversation:typing", {
+  conversationId: "CONVERSATION_ID",
+  isTyping: true,
+});
+```
+
+Stop typing by sending `isTyping: false`.
+
+Mark messages as read:
+
+```ts
+socket.emit("conversation:read", {
+  conversationId: "CONVERSATION_ID",
+});
+```
+
+### Server events
+
+```text
+message:new
+conversation:typing
+conversation:read
+user:online
+user:offline
+```
+
+## Database design
+
+### Users
+
+Stores:
+
+- Display name
+- Lowercase unique email
+- Hashed password
+- Profile picture URL
+- Online status
+- Timestamps
+
+The password field is excluded from normal queries.
+
+### Conversations
+
+Stores:
+
+- Exactly two participant user IDs
+- The latest message ID
+- Timestamps
+
+Participant IDs are references to the Users collection.
+
+### Messages
+
+Stores:
+
+- Conversation ID
+- Sender ID
+- Text content
+- `createdAt`
+- `readAt`
+
+Messages use the compound index:
+
+```text
+conversationId + createdAt
+```
+
+This supports conversation history queries sorted by creation time.
+
+## Validation and authorization
+
+- Global `ValidationPipe` removes unknown fields and rejects unexpected fields.
+- DTOs validate authentication, conversations, message content, pagination, and Socket.IO payloads.
+- MongoDB IDs are validated before database access.
+- Users must be conversation participants to retrieve history, send messages, mark messages read, or emit typing events.
+- Passwords are hashed and never returned as normal user data.
+- JWT secrets are loaded from environment variables.
+- CORS is enabled for the Next.js frontend.
+
+## Testing and quality commands
+
+```bash
+npm run build
+npm run lint
+npm run test
+npm run test:e2e
+npm run test:cov
+```
+
+## Current trade-offs
+
+- The token blacklist is stored in process memory. This is suitable for a single-server assignment deployment, but Redis should be used for persistent revocation and multiple backend instances.
+- Presence is implemented through Socket.IO online/offline events and is intentionally simple.
+- Message history currently uses page-based pagination. Cursor pagination would be preferable for very large conversations.
+
