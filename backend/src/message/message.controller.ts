@@ -1,7 +1,8 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
 import { MessageService } from './message.service.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { GetMessagesDto } from './dto/get-messages.dto.js';
 
 @Controller('conversation/:conversationId/messages')
 export class MessageController {
@@ -11,14 +12,13 @@ export class MessageController {
   findAll(
     @CurrentUser('userId') userId: string,
     @Param('conversationId', ParseObjectIdPipe) conversationId: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit = 30,
+    @Query() getMessagesDto: GetMessagesDto,
   ) {
     return this.messageService.findAll(
       conversationId,
       userId,
-      page,
-      Math.min(limit, 100),
+      getMessagesDto.page,
+      getMessagesDto.limit,
     );
   }
 

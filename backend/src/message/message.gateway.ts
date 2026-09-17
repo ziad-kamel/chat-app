@@ -9,7 +9,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Server, Socket } from 'socket.io';
 import { MessageService } from './message.service.js';
-import { CreateMessageDto } from './dto/create-message.dto.js';
+import { SendMessageDto } from './dto/send-message.dto.js';
+import { TypingMessageDto } from './dto/typing-message.dto.js';
+import { ReadMessageDto } from './dto/read-message.dto.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { TokenBlacklistService } from '../auth/services/token-blacklist.service.js';
 
@@ -60,7 +62,7 @@ export class MessageGateway {
   @SubscribeMessage('message:send')
   async sendMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() body: CreateMessageDto & { conversationId: string },
+    @MessageBody() body: SendMessageDto,
   ) {
     const message = await this.messageService.create(
       body.conversationId,
@@ -88,7 +90,7 @@ export class MessageGateway {
   @SubscribeMessage('conversation:typing')
   async typing(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() body: { conversationId: string; isTyping: boolean },
+    @MessageBody() body: TypingMessageDto,
   ) {
     const conversation = await this.messageService.findConversationForUser(
       body.conversationId,
@@ -108,7 +110,7 @@ export class MessageGateway {
   @SubscribeMessage('conversation:read')
   async read(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() body: { conversationId: string },
+    @MessageBody() body: ReadMessageDto,
   ) {
     await this.messageService.markAsRead(body.conversationId, socket.data.userId);
     const conversation = await this.messageService.findConversationForUser(
